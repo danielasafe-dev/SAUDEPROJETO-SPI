@@ -72,8 +72,6 @@ export default function FormsListPage() {
   }
 
   async function handleToggleAtivo(f: Formulario) {
-    const acao = f.ativo ? 'desativar' : 'reativar';
-    if (!window.confirm(`Deseja ${acao} o formulário "${f.nome}"?`)) return;
     setTogglingId(f.id);
     setImportError('');
     try {
