@@ -61,9 +61,7 @@ export async function updateUser(id: string, data: UpdateUserInput) {
     return user;
   }
 
-  if (data.groupIds !== undefined) {
-    await api.put(`/api/users/${id}/groups`, { groupIds: data.groupIds });
-  }
+  return (await api.put(`/api/users/${id}`, data)).data;
 }
 
 export async function deactivateUser(id: string) {

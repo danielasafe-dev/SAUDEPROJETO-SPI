@@ -42,7 +42,11 @@ export default function UserEditDialog({ user, open, onClose, onSubmit, groups =
   }, [open, user]);
 
   const handleChange = (field: Exclude<keyof UserFormValues, 'groupIds'>, value: string) => {
-    setValues((current) => ({ ...current, [field]: value }));
+    setValues((current) => ({
+      ...current,
+      [field]: field === 'role' ? value as UserFormValues['role'] : value,
+      ...(field === 'role' && value === 'analista' ? { groupIds: [] } : {}),
+    }));
   };
 
   const handleGroupIdsChange = (groupIds: string[]) => {
@@ -71,7 +75,11 @@ export default function UserEditDialog({ user, open, onClose, onSubmit, groups =
         nome: values.nome.trim(),
         email,
         role: values.role,
-        groupIds: selectableGroups.length > 0 ? values.groupIds : undefined,
+        groupIds: values.role === 'analista'
+          ? []
+          : selectableGroups.length > 0
+            ? values.groupIds
+            : undefined,
       });
       onClose();
     } catch (err: unknown) {

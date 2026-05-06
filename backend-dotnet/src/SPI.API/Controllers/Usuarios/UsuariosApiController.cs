@@ -32,6 +32,16 @@ public sealed class UsersController : ControllerBase
         return Ok(new { message = "Usuario desativado" });
     }
 
+    [HttpPut("{userId:guid}")]
+    public async Task<IActionResult> Update(
+        Guid userId,
+        [FromBody] UpdateUserRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _usersAppService.UpdateAsync(userId, request, User.GetUserId(), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPut("{userId:guid}/groups")]
     public async Task<IActionResult> UpdateGroups(
         Guid userId,

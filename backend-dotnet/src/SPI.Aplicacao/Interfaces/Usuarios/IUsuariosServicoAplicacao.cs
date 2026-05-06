@@ -5,6 +5,7 @@ namespace SPI.Application.Interfaces;
 public interface IUsersAppService
 {
     Task<IReadOnlyCollection<UserResponseDto>> ListAsync(Guid actorUserId, CancellationToken cancellationToken = default);
+    Task<UserResponseDto> UpdateAsync(Guid userId, UpdateUserRequestDto request, Guid actorUserId, CancellationToken cancellationToken = default);
     Task DeactivateAsync(Guid userId, Guid actorUserId, CancellationToken cancellationToken = default);
     Task UpdateGroupsAsync(Guid userId, UpdateUserGroupsRequestDto request, Guid actorUserId, CancellationToken cancellationToken = default);
 }
