@@ -38,13 +38,14 @@ public sealed class Evaluation : Entity, IAggregateRoot
     }
 
     public Evaluation(
-        Guid patientId,
-        Guid avaliadorId,
-        Guid groupId,
-        Guid formTemplateId,
-        Dictionary<string, int> respostas,
+        int patientId,
+        int avaliadorId,
+        int groupId,
+        int formTemplateId,
+        Dictionary<int, int> respostas,
         IReadOnlyCollection<FormQuestion> questions,
-        string? observacoes = null)
+        IReadOnlyCollection<FormClassificationRange> classificationRanges)
+         string? observacoes = null)
     {
         if (patientId == Guid.Empty)
         {

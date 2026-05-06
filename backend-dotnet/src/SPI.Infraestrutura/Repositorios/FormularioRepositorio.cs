@@ -19,7 +19,9 @@ public sealed class FormRepository : IFormRepository
             .AsNoTracking()
             .Include(x => x.Group)
             .Include(x => x.CriadoPorUsuario)
-            .Include(x => x.Questions)
+            .Include(x => x.Questions).ThenInclude(q => q.Options)
+            .Include(x => x.ClassificationRanges)
+            .Where(x => x.Ativo)
             .OrderBy(x => x.Nome)
             .ToListAsync(cancellationToken);
 
@@ -28,8 +30,9 @@ public sealed class FormRepository : IFormRepository
             .AsNoTracking()
             .Include(x => x.Group)
             .Include(x => x.CriadoPorUsuario)
-            .Include(x => x.Questions)
-            .Where(x => x.GroupId == null || groupIds.Contains(x.GroupId.Value))
+            .Include(x => x.Questions).ThenInclude(q => q.Options)
+            .Include(x => x.ClassificationRanges)
+            .Where(x => x.Ativo && (x.GroupId == null || groupIds.Contains(x.GroupId.Value)))
             .OrderBy(x => x.Nome)
             .ToListAsync(cancellationToken);
 
@@ -38,21 +41,24 @@ public sealed class FormRepository : IFormRepository
             .AsNoTracking()
             .Include(x => x.Group)
             .Include(x => x.CriadoPorUsuario)
-            .Include(x => x.Questions)
-            .Where(x => x.OrganizationId == organizationId)
+            .Include(x => x.Questions).ThenInclude(q => q.Options)
+            .Include(x => x.ClassificationRanges)
+            .Where(x => x.Ativo && x.OrganizationId == organizationId)
             .OrderBy(x => x.Nome)
             .ToListAsync(cancellationToken);
 
     public Task<FormTemplate?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _context.FormTemplates
-            .Include(x => x.Questions)
+            .Include(x => x.Questions).ThenInclude(q => q.Options)
+            .Include(x => x.ClassificationRanges)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     public Task<FormTemplate?> GetDetailedByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _context.FormTemplates
             .Include(x => x.Group)
             .Include(x => x.CriadoPorUsuario)
-            .Include(x => x.Questions)
+            .Include(x => x.Questions).ThenInclude(q => q.Options)
+            .Include(x => x.ClassificationRanges)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     public Task AddAsync(FormTemplate formTemplate, CancellationToken cancellationToken = default) =>

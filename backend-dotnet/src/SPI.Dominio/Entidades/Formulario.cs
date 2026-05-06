@@ -5,6 +5,7 @@ namespace SPI.Domain.Entities;
 public sealed class FormTemplate : Entity, IAggregateRoot
 {
     private readonly List<FormQuestion> _questions = [];
+    private readonly List<FormClassificationRange> _classificationRanges = [];
 
     private FormTemplate()
     {
@@ -15,7 +16,8 @@ public sealed class FormTemplate : Entity, IAggregateRoot
         string? descricao,
         Guid criadoPorUsuarioId,
         Guid? groupId,
-        IEnumerable<(string Texto, decimal Peso, int Ordem)> questions)
+        IEnumerable<(string Texto, decimal Peso, int Ordem, IReadOnlyCollection<(int Valor, string Descricao)>? Opcoes)> questions,
+        IEnumerable<(decimal ScoreMin, decimal ScoreMax, string Rotulo)>? ranges = null)
     {
         if (string.IsNullOrWhiteSpace(nome))
         {
@@ -36,6 +38,7 @@ public sealed class FormTemplate : Entity, IAggregateRoot
         AtualizadoEm = DateTime.UtcNow;
 
         ReplaceQuestions(questions);
+        if (ranges is not null) SetRanges(ranges);
     }
 
     public string Nome { get; private set; } = string.Empty;
@@ -53,13 +56,15 @@ public sealed class FormTemplate : Entity, IAggregateRoot
 
     public void AssignOrganization(Guid organizationId) => OrganizationId = organizationId;
     public IReadOnlyCollection<FormQuestion> Questions => _questions;
+    public IReadOnlyCollection<FormClassificationRange> ClassificationRanges => _classificationRanges;
     public decimal PesoTotal => _questions.Sum(x => x.Peso);
 
     public void Update(
         string nome,
         string? descricao,
         Guid? groupId,
-        IEnumerable<(string Texto, decimal Peso, int Ordem)> questions)
+        IEnumerable<(string Texto, decimal Peso, int Ordem, IReadOnlyCollection<(int Valor, string Descricao)>? Opcoes)> questions,
+        IEnumerable<(decimal ScoreMin, decimal ScoreMax, string Rotulo)>? ranges = null)
     {
         if (string.IsNullOrWhiteSpace(nome))
         {
@@ -72,6 +77,7 @@ public sealed class FormTemplate : Entity, IAggregateRoot
         AtualizadoEm = DateTime.UtcNow;
 
         ReplaceQuestions(questions);
+        SetRanges(ranges ?? []);
     }
 
     public void Deactivate()
@@ -80,7 +86,23 @@ public sealed class FormTemplate : Entity, IAggregateRoot
         AtualizadoEm = DateTime.UtcNow;
     }
 
-    private void ReplaceQuestions(IEnumerable<(string Texto, decimal Peso, int Ordem)> questions)
+    public void Activate()
+    {
+        Ativo = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    private void SetRanges(IEnumerable<(decimal ScoreMin, decimal ScoreMax, string Rotulo)> ranges)
+    {
+        _classificationRanges.Clear();
+        foreach (var r in ranges)
+        {
+            _classificationRanges.Add(new FormClassificationRange(r.ScoreMin, r.ScoreMax, r.Rotulo));
+        }
+    }
+
+    private void ReplaceQuestions(
+        IEnumerable<(string Texto, decimal Peso, int Ordem, IReadOnlyCollection<(int Valor, string Descricao)>? Opcoes)> questions)
     {
         var list = questions
             .OrderBy(x => x.Ordem)
@@ -92,9 +114,14 @@ public sealed class FormTemplate : Entity, IAggregateRoot
         }
 
         _questions.Clear();
-        foreach (var question in list)
+        foreach (var q in list)
         {
-            _questions.Add(new FormQuestion(question.Texto, question.Peso, question.Ordem));
+            var question = new FormQuestion(q.Texto, q.Peso, q.Ordem);
+            if (q.Opcoes is { Count: > 0 })
+            {
+                question.SetOptions(q.Opcoes);
+            }
+            _questions.Add(question);
         }
     }
 }

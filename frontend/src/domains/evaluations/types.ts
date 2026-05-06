@@ -1,5 +1,6 @@
 export interface Question {
   id: string;
+  ordem?: number;
   name: string;
   options: {
     score: number;

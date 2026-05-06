@@ -1,9 +1,21 @@
+export interface FormQuestionOption {
+  valor: number;
+  descricao: string;
+}
+
 export interface FormQuestion {
   id?: string;
   texto: string;
   peso: number;
   ordem: number;
   ativa?: boolean;
+  opcoes: FormQuestionOption[];
+}
+
+export interface FaixaClassificacao {
+  scoreMin: number;
+  scoreMax: number;
+  rotulo: string;
 }
 
 export interface Formulario {
@@ -19,13 +31,15 @@ export interface Formulario {
   criadoEm: string;
   atualizadoEm: string;
   perguntas: FormQuestion[];
+  faixas: FaixaClassificacao[];
 }
 
 export interface CriarFormularioPayload {
   nome: string;
   descricao?: string;
-  groupId?: string;
-  perguntas: { texto: string; peso: number; ordem: number }[];
+ groupId?: string;
+  perguntas: { texto: string; peso: number; ordem: number; opcoes: FormQuestionOption[] }[];
+  faixas: FaixaClassificacao[];
 }
 
 export interface Grupo {

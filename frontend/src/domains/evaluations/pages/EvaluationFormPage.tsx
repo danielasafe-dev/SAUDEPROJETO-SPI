@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { SPI_QUESTIONS } from '../utils/questions';
-import { calcScore, getClassification } from '../utils/scoring';
+import { getClassification } from '../utils/scoring';
 import type { EvaluationAnswers, Question } from '../types';
 import QuestionCard from '../components/QuestionCard';
+import ScoreChart from '../components/ScoreChart';
 import { createEvaluation } from '@/domains/dashboard/api';
 import { getForms } from '@/domains/forms/api';
 import type { Formulario } from '@/domains/forms/types';
+import Dialog from '@/shared/components/dialog/Dialog';
 import { getGroups } from '@/domains/groups/api';
 import type { Group } from '@/domains/groups/types';
 import { createPatient, getReusablePatients, type CreatePatientInput } from '@/domains/patients/api';
@@ -18,11 +18,18 @@ interface EvaluationFormPageProps {
   onCancel?: () => void;
 }
 
+interface ResultData {
+  score: number;
+  pesoTotal: number;
+  classification: string;
+  color: string;
+  cls: string;
+  answers: Record<number, number>;
+  questions: { id: number; name: string }[];
+}
 const DEFAULT_FORM_ID = 'default';
 
 export default function EvaluationFormPage({ embedded = false, onCancel }: EvaluationFormPageProps) {
-  const navigate = useNavigate();
-
   const [formularios, setFormularios] = useState<Formulario[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
@@ -38,6 +45,7 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
   const [observations, setObservations] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resultData, setResultData] = useState<ResultData | null>(null);
 
   useEffect(() => {
     getForms().catch(() => []).then(setFormularios);
@@ -84,6 +92,11 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
     }
   }
 
+  function closeResult() {
+    setResultData(null);
+    onCancel?.();
+  }
+
   const total = activeQuestions.length;
   const answered = Object.keys(answers).length;
   const progress = total > 0 ? (answered / total) * 100 : 0;
@@ -109,6 +122,30 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
     setError('');
     setLoading(true);
     try {
+      const pid = mode === 'existing' ? existingPatientId! : Date.now();
+      const created = await createEvaluation({ patientId: pid, respostas: answers, formId: selectedFormId! });
+      const score = Number(created.scoreTotal);
+      const pesoTotal = Number(created.pesoTotal);
+      const form = formularios.find((f) => f.id === selectedFormId);
+      const faixas = [...(form?.faixas ?? [])].sort((a, b) => a.scoreMin - b.scoreMin);
+      let classification: string;
+      let color: string;
+      let cls: string;
+      if (faixas.length > 0) {
+        const idx = faixas.findIndex((f) => score >= f.scoreMin && score <= f.scoreMax);
+        const pos = idx === -1 ? faixas.length - 1 : idx;
+        classification = faixas[pos]?.rotulo ?? created.classificacao;
+        if (pos === 0) { color = '#16a34a'; cls = 'not-tea'; }
+        else if (pos === faixas.length - 1) { color = '#dc2626'; cls = 'tea-grave'; }
+        else { color = '#ca8a04'; cls = 'tea-leve'; }
+      } else {
+        const result = getClassification(score);
+        classification = result.classification;
+        color = result.color;
+        cls = result.cls;
+      }
+      const questions = activeQuestions.map((q) => ({ id: q.id, name: q.name }));
+      setResultData({ score, pesoTotal, classification, color, cls, answers, questions });
       const pid = existingPatientId!;
       const createdEvaluation = await createEvaluation({
         patientId: pid,
@@ -161,18 +198,12 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
         <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
           <h3 className="text-sm font-semibold text-gray-700">Formulario de avaliacao</h3>
 
-          <button
-            type="button"
-            onClick={() => selectForm(DEFAULT_FORM_ID)}
-            className="w-full rounded-lg border-2 border-blue-200 bg-blue-50 px-4 py-3 text-left transition hover:border-blue-400 hover:bg-blue-100"
-          >
-            <p className="text-sm font-semibold text-blue-700">Formulario Padrao</p>
-            <p className="text-xs text-blue-500 mt-0.5">14 questoes — CARS adaptado</p>
-          </button>
-
-          {formularios.length > 0 && (
-            <div className="space-y-2 pt-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Formularios criados</p>
+          {formularios.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-4">
+              Nenhum formulario disponivel. Importe um formulario na secao Formularios.
+            </p>
+          ) : (
+            <div className="space-y-2">
               {formularios.map((f) => (
                 <button
                   key={f.id}
@@ -207,57 +238,146 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
     );
   }
 
+  const clsBg = resultData?.cls === 'not-tea'
+    ? 'bg-green-100 text-green-700'
+    : resultData?.cls === 'tea-leve'
+      ? 'bg-amber-100 text-amber-700'
+      : 'bg-red-100 text-red-700';
+
   // Passo 2 — paciente + perguntas juntos
   return (
-    <div className={embedded ? 'space-y-5' : 'mx-auto max-w-3xl space-y-5'}>
-      {/* Cabecalho */}
-      <div className="flex items-center justify-between">
-        <div>
-          {!embedded && <h2 className="text-xl font-bold">Nova Avaliacao</h2>}
-          <p className="text-sm text-gray-500">
-            {selectedFormId === DEFAULT_FORM_ID
-              ? 'Formulario Padrao'
-              : formularios.find((f) => f.id === selectedFormId)?.nome}
-            {' '}·{' '}
+    <>
+      <Dialog
+        isOpen={resultData !== null}
+        onClose={closeResult}
+        title="Resultado da Avaliacao"
+        size="xl"
+      >
+        {resultData && (
+          <div className="space-y-5">
+            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
+              <p className="mb-2 text-sm text-gray-500">Pontuacao Total (max. {resultData.pesoTotal})</p>
+              <p className="text-5xl font-extrabold" style={{ color: resultData.color }}>
+                {resultData.score}
+              </p>
+              <p className={`mt-3 inline-block rounded-full px-4 py-2 text-sm font-bold ${clsBg}`}>
+                {resultData.score}/{resultData.pesoTotal} — {resultData.classification}
+              </p>
+            </div>
+
+            <ScoreChart respostas={resultData.answers} questions={resultData.questions} />
+
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-gray-700">Detalhamento por Dimensao</h3>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                {resultData.questions.map((q, idx) => {
+                  const v = resultData.answers[q.id] || 0;
+                  const labels = ['Normal', 'Leve', 'Moderado', 'Grave'];
+                  return (
+                    <div key={q.id} className="flex items-center gap-2 rounded-lg bg-gray-50 p-2">
+                      <span className="w-5 text-xs font-bold text-gray-500">#{idx + 1}</span>
+                      <span className={`flex h-6 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
+                        v <= 2 ? 'bg-green-500' : v === 3 ? 'bg-amber-500' : 'bg-red-500'
+                      }`}>
+                        {v}
+                      </span>
+                      <span className="truncate text-xs" title={q.name}>{q.name}</span>
+                      <span className="ml-auto text-xs text-gray-400">{labels[v - 1]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={closeResult}
+                className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
+      </Dialog>
+
+      <div className={embedded ? 'space-y-5' : 'mx-auto max-w-3xl space-y-5'}>
+        {/* Cabecalho */}
+        <div className="flex items-center justify-between">
+          <div>
+            {!embedded && <h2 className="text-xl font-bold">Nova Avaliacao</h2>}
+            <p className="text-sm text-gray-500">
+              {formularios.find((f) => f.id === selectedFormId)?.nome}
+              {' '}·{' '}
+              <button
+                type="button"
+                onClick={() => { setSelectedFormId(null); setAnswers({}); setError(''); }}
+                className="text-blue-600 hover:underline"
+              >
+                trocar formulario
+              </button>
+            </p>
+          </div>
+          <div className="text-sm font-medium text-gray-500">{answered}/{total}</div>
+        </div>
+
+        {/* Barra de progresso */}
+        <div className="h-2 w-full rounded-full bg-gray-200">
+          <div
+            className="h-2 rounded-full bg-blue-600 transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        {/* Paciente */}
+        <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-gray-700">Paciente</h3>
+          <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => { setSelectedFormId(null); setAnswers({}); setError(''); }}
-              className="text-blue-600 hover:underline"
+              onClick={() => setMode('existing')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${mode === 'existing' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
             >
-              trocar formulario
+              Paciente Existente
             </button>
-          </p>
+            <button
+              type="button"
+              onClick={() => setMode('new')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${mode === 'new' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+            >
+              Novo Paciente
+            </button>
+          </div>
+          {mode === 'existing' ? (
+            <ExistingPatientSelector value={existingPatientId} onChange={setExistingPatientId} />
+          ) : (
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Nome completo do paciente"
+            />
+          )}
         </div>
-        <div className="text-sm font-medium text-gray-500">{answered}/{total}</div>
-      </div>
 
-      {/* Barra de progresso */}
-      <div className="h-2 w-full rounded-full bg-gray-200">
-        <div
-          className="h-2 rounded-full bg-blue-600 transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      {/* Paciente */}
-      <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
-        <h3 className="text-sm font-semibold text-gray-700">Paciente</h3>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setMode('existing')}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${mode === 'existing' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
-          >
-            Paciente Existente
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('new')}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${mode === 'new' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
-          >
-            Novo Paciente
-          </button>
+        {/* Perguntas */}
+        <div className="space-y-3">
+          {activeQuestions.map((q) => (
+            <QuestionCard
+              key={q.id}
+              question={q}
+              value={answers[q.id] as number | undefined}
+              onChange={(score) => setAnswers((prev) => ({ ...prev, [q.id]: score }))}
+            />
+          ))}
         </div>
+
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
         {mode === 'existing' ? (
           <ExistingPatientSelector value={existingPatientId} createdPatient={createdPatient} onChange={setExistingPatientId} />
         ) : (
@@ -322,25 +442,26 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
         </div>
       )}
 
-      <div className={`flex ${embedded ? 'justify-end gap-3 pb-2' : 'justify-center pb-8'}`}>
-        {embedded && onCancel && (
+        <div className={`flex ${embedded ? 'justify-end gap-3 pb-2' : 'justify-center pb-8'}`}>
+          {embedded && onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={loading}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+          )}
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleSubmit}
             disabled={loading}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-xl bg-green-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-green-600/20 transition hover:bg-green-700 disabled:opacity-50"
           >
-            Cancelar
+            {loading ? 'Salvando...' : 'Salvar Avaliacao'}
           </button>
-        )}
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={loading}
-          className="rounded-xl bg-green-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-green-600/20 transition hover:bg-green-700 disabled:opacity-50"
-        >
-          {loading ? 'Salvando...' : 'Salvar Avaliacao'}
-        </button>
+        </div>
       </div>
 
       <PatientCreateDialog

@@ -98,7 +98,8 @@ public sealed class FormsAppService : IFormsAppService
             request.Descricao,
             actor.Id,
             request.GroupId,
-            request.Perguntas.Select(x => (x.Texto, x.Peso, x.Ordem)));
+            request.Perguntas.Select(x => BuildQuestionTuple(x)),
+            request.Faixas.Select(f => (f.ScoreMin, f.ScoreMax, f.Rotulo)));
 
         if (actor.Role == UserRole.Admin && actor.OrganizationId.HasValue)
         {
@@ -141,7 +142,8 @@ public sealed class FormsAppService : IFormsAppService
             request.Nome,
             request.Descricao,
             request.GroupId,
-            request.Perguntas.Select(x => (x.Texto, x.Peso, x.Ordem)));
+            request.Perguntas.Select(x => BuildQuestionTuple(x)),
+            request.Faixas.Select(f => (f.ScoreMin, f.ScoreMax, f.Rotulo)));
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -149,6 +151,46 @@ public sealed class FormsAppService : IFormsAppService
             ?? throw new InvalidOperationException("Nao foi possivel carregar o formulario atualizado.");
 
         return updated.ToDto();
+    }
+
+    public async Task DeactivateAsync(int formId, int actorUserId, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userRepository.GetDetailedByIdAsync(actorUserId, cancellationToken)
+            ?? throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+
+        if (!actor.Role.CanManageForms())
+        {
+            throw new UnauthorizedAccessException("Usuario sem permissao para desativar formularios.");
+        }
+
+        var form = await _formRepository.GetByIdAsync(formId, cancellationToken)
+            ?? throw new KeyNotFoundException("Formulario nao encontrado.");
+
+        var accessScope = AccessScopeResolver.Resolve(actor);
+        ValidateFormGroupAccess(actor.Role, form.GroupId, accessScope);
+
+        form.Deactivate();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task ActivateAsync(int formId, int actorUserId, CancellationToken cancellationToken = default)
+    {
+        var actor = await _userRepository.GetDetailedByIdAsync(actorUserId, cancellationToken)
+            ?? throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+
+        if (!actor.Role.CanManageForms())
+        {
+            throw new UnauthorizedAccessException("Usuario sem permissao para reativar formularios.");
+        }
+
+        var form = await _formRepository.GetByIdAsync(formId, cancellationToken)
+            ?? throw new KeyNotFoundException("Formulario nao encontrado.");
+
+        var accessScope = AccessScopeResolver.Resolve(actor);
+        ValidateFormGroupAccess(actor.Role, form.GroupId, accessScope);
+
+        form.Activate();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     private static void ValidateFormGroupAccess(UserRole role, Guid? groupId, AccessScope accessScope)
@@ -171,6 +213,20 @@ public sealed class FormsAppService : IFormsAppService
         {
             throw new UnauthorizedAccessException("Usuario sem permissao para criar ou alterar formularios deste grupo.");
         }
+    }
+
+    private static (string Texto, decimal Peso, int Ordem, IReadOnlyCollection<(int Valor, string Descricao)>? Opcoes)
+        BuildQuestionTuple(FormQuestionRequestDto x)
+    {
+        IReadOnlyCollection<(int, string)>? opcoes = x.Opcoes.Count > 0
+            ? x.Opcoes.Select(o => (o.Valor, o.Descricao)).ToList()
+            : null;
+
+        var peso = opcoes is { Count: > 0 }
+            ? (decimal)opcoes.Max(o => o.Item1)
+            : x.Peso;
+
+        return (x.Texto, peso, x.Ordem, opcoes);
     }
 
     private static void EnsureCanAccessForm(SPI.Domain.Entities.User actor, Guid? groupId)

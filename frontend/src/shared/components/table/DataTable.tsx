@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown } from 'lucide-react';
+
 
 export interface Column<T> {
-  header: string;
+  header: ReactNode;
   render: (row: T) => ReactNode;
   className?: string;
   align?: 'left' | 'right';
+  sortKey?: (row: T) => string | number;
+  sticky?: boolean;
 }
 
 interface DataTableProps<T> {
