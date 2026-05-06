@@ -47,7 +47,15 @@ public static class FrontendDevServerExtensions
 
         if (IsPortOccupied(frontendPort))
         {
-            app.Logger.LogWarning("A porta fixa do frontend ({FrontendPort}) ainda esta ocupada.", frontendPort);
+            if (IsFrontendResponding(frontendUrl))
+            {
+                File.WriteAllText(portFilePath, frontendPort.ToString());
+                app.Logger.LogInformation("Frontend React ja esta disponivel em {FrontendUrl}.", frontendUrl);
+                OpenBrowser(app.Logger, frontendUrl);
+                return;
+            }
+
+            app.Logger.LogWarning("A porta fixa do frontend ({FrontendPort}) ainda esta ocupada e nao respondeu em {FrontendUrl}.", frontendPort, frontendUrl);
             return;
         }
 
@@ -192,6 +200,24 @@ public static class FrontendDevServerExtensions
         IPGlobalProperties.GetIPGlobalProperties()
             .GetActiveTcpListeners()
             .Any(endpoint => endpoint.Port == port);
+
+    private static bool IsFrontendResponding(string frontendUrl)
+    {
+        try
+        {
+            using var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(2)
+            };
+
+            using var response = httpClient.GetAsync(frontendUrl).GetAwaiter().GetResult();
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }
 
 

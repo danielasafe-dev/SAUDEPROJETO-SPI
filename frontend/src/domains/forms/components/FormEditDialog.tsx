@@ -16,7 +16,7 @@ function emptyQuestion(): FormQuestion {
 }
 
 interface Props {
-  formId: number | null;
+  formId: string | null;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -27,7 +27,7 @@ export default function FormEditDialog({ formId, onClose, onSaved }: Props) {
 
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [groupId, setGroupId] = useState<number | ''>('');
+  const [groupId, setGroupId] = useState<string | ''>('');
   const [perguntas, setPerguntas] = useState<FormQuestion[]>([emptyQuestion()]);
   const [faixas, setFaixas] = useState<FaixaClassificacao[]>([]);
   const [usarClassificacaoPadrao, setUsarClassificacaoPadrao] = useState(false);
@@ -174,7 +174,7 @@ export default function FormEditDialog({ formId, onClose, onSaved }: Props) {
       await updateForm(formId!, {
         nome,
         descricao: descricao || undefined,
-        groupId: groupId ? Number(groupId) : undefined,
+        groupId: groupId || undefined,
         perguntas: validPerguntas.map((q, i) => ({
           texto: q.texto.trim(),
           peso: derivedPeso(q),
@@ -257,7 +257,7 @@ export default function FormEditDialog({ formId, onClose, onSaved }: Props) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Grupo</label>
+              <label className="block text-sm font-medium mb-1">Equipe</label>
               {!isAdmin && grupos.length === 1 ? (
                 <input
                   value={grupos[0].nome}
@@ -267,12 +267,12 @@ export default function FormEditDialog({ formId, onClose, onSaved }: Props) {
               ) : (
                 <select
                   value={groupId}
-                  onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) => setGroupId(e.target.value || '')}
                   required={!isAdmin}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                 >
-                  {isAdmin && <option value="">Todos os grupos</option>}
-                  {!isAdmin && <option value="">Selecione um grupo</option>}
+                  {isAdmin && <option value="">Todas as equipes</option>}
+                  {!isAdmin && <option value="">Selecione uma equipe</option>}
                   {grupos.map((g) => (
                     <option key={g.id} value={g.id}>{g.nome}</option>
                   ))}

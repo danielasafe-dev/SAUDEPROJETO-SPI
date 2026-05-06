@@ -179,7 +179,7 @@ public static class DatabaseInitializer
                 """
                 CREATE TABLE form_question_options (
                     id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                    form_question_id INTEGER NOT NULL,
+                    form_question_id TEXT NOT NULL,
                     valor            INTEGER NOT NULL,
                     descricao        TEXT    NOT NULL,
                     FOREIGN KEY (form_question_id) REFERENCES form_questions(id) ON DELETE CASCADE
@@ -192,6 +192,36 @@ public static class DatabaseInitializer
     }
 
     private static async Task EnsureSqliteFormClassificationRangesTableAsync(AppDbContext context, CancellationToken cancellationToken)
+    {
+        var connection = context.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        await using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='form_classification_ranges';";
+        var exists = await checkCmd.ExecuteScalarAsync(cancellationToken);
+
+        if (exists is null)
+        {
+            await context.Database.ExecuteSqlRawAsync(
+                """
+                CREATE TABLE form_classification_ranges (
+                    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                    form_template_id TEXT NOT NULL,
+                    score_min        REAL NOT NULL,
+                    score_max        REAL NOT NULL,
+                    rotulo           TEXT NOT NULL,
+                    FOREIGN KEY (form_template_id) REFERENCES form_templates(id) ON DELETE CASCADE
+                );
+                CREATE INDEX IX_form_classification_ranges_form_template_id
+                    ON form_classification_ranges(form_template_id);
+                """,
+                cancellationToken);
+        }
+    }
+
     private static async Task EnsureSqliteEvaluationReferralTableAsync(AppDbContext context, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -265,26 +295,6 @@ public static class DatabaseInitializer
             await connection.OpenAsync(cancellationToken);
         }
 
-        await using var checkCmd = connection.CreateCommand();
-        checkCmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='form_classification_ranges';";
-        var exists = await checkCmd.ExecuteScalarAsync(cancellationToken);
-
-        if (exists is null)
-        {
-            await context.Database.ExecuteSqlRawAsync(
-                """
-                CREATE TABLE form_classification_ranges (
-                    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                    form_template_id INTEGER NOT NULL,
-                    score_min        REAL NOT NULL,
-                    score_max        REAL NOT NULL,
-                    rotulo           TEXT NOT NULL,
-                    FOREIGN KEY (form_template_id) REFERENCES form_templates(id) ON DELETE CASCADE
-                );
-                CREATE INDEX IX_form_classification_ranges_form_template_id
-                    ON form_classification_ranges(form_template_id);
-                """,
-                cancellationToken);
         await using var cmd = connection.CreateCommand();
         cmd.CommandText = $"PRAGMA table_info('{table}');";
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);

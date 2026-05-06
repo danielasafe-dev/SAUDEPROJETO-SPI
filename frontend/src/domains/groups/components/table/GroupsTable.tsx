@@ -23,7 +23,7 @@ export default function GroupsTable({
   if (!groups.length) {
     return (
       <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-10 text-center text-sm text-gray-500">
-        Nenhum grupo encontrado com os filtros atuais.
+        Nenhuma equipe encontrada com os filtros atuais.
       </div>
     );
   }
@@ -33,7 +33,7 @@ export default function GroupsTable({
       <table className="w-full text-sm">
         <thead className="border-b border-gray-200 bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">Grupo</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-600">Equipe</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600">Gestor</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600">Membros</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>

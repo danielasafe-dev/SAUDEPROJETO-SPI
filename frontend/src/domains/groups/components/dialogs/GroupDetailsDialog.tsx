@@ -29,8 +29,8 @@ export default function GroupDetailsDialog({
     <Dialog
       isOpen={open}
       onClose={onClose}
-      title="Detalhes do grupo"
-      description="Confira os dados principais do grupo sem editar as informacoes."
+      title="Detalhes da equipe"
+      description="Confira os dados principais da equipe sem editar as informacoes."
       size="lg"
       footer={
         <button
@@ -44,7 +44,7 @@ export default function GroupDetailsDialog({
     >
       {group && (
         <div className="grid gap-4 md:grid-cols-2">
-          <InfoRow label="Nome do grupo" value={group.nome} />
+          <InfoRow label="Nome da equipe" value={group.nome} />
           <InfoRow label="Gestor responsavel" value={group.gestor_nome || 'Nao informado'} />
           <InfoRow label="Status" value={getGroupStatusLabel(group.ativo)} />
           <InfoRow label="Membros vinculados" value={String(group.quantidade_membros)} />

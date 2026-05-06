@@ -13,7 +13,7 @@ interface ResultState {
   patientId: string;
   observacoes?: string | null;
   answers: Record<string, number>;
-  questions?: { id: number; name: string }[];
+  questions?: { id: string; name: string }[];
 }
 
 export default function EvaluationResultPage() {

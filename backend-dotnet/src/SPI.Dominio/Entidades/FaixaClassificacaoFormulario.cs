@@ -24,7 +24,7 @@ public sealed class FormClassificationRange
     }
 
     public int Id { get; private set; }
-    public int FormTemplateId { get; private set; }
+    public Guid FormTemplateId { get; private set; }
     public decimal ScoreMin { get; private set; }
     public decimal ScoreMax { get; private set; }
     public string Rotulo { get; private set; } = string.Empty;

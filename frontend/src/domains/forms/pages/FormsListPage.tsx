@@ -21,10 +21,10 @@ export default function FormsListPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [importedData, setImportedData] = useState<FormImportData | undefined>(undefined);
   const [detailsForm, setDetailsForm] = useState<Formulario | null>(null);
-  const [editFormId, setEditFormId] = useState<number | null>(null);
+  const [editFormId, setEditFormId] = useState<string | null>(null);
   const [importError, setImportError] = useState('');
   const [pdfPreviewForm, setPdfPreviewForm] = useState<Formulario | null>(null);
-  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'todos' | 'ativo' | 'inativo'>('ativo');
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -226,7 +226,7 @@ export default function FormsListPage() {
       render: (f) => <span className="text-gray-500">{f.descricao || '—'}</span>,
     },
     {
-      header: 'Grupo',
+      header: 'Equipe',
       sortKey: (f) => f.groupNome ?? '',
       render: (f) => <span className="text-gray-500">{f.groupNome || '—'}</span>,
     },

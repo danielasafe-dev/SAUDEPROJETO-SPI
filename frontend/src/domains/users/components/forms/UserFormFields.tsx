@@ -115,7 +115,7 @@ export default function UserFormFields({
       {showSingleGroupSelect && (
         <div>
           <label className="mb-1 block text-sm font-medium">
-            Grupo vinculado <span className="text-gray-400 font-normal">(opcional)</span>
+            Equipe vinculada <span className="text-gray-400 font-normal">(opcional)</span>
           </label>
           <select
             value={values.groupIds[0] ? String(values.groupIds[0]) : ''}
@@ -123,7 +123,7 @@ export default function UserFormFields({
             disabled={disabled}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
-            <option value="">Nenhum grupo adicional</option>
+            <option value="">Nenhuma equipe adicional</option>
             {groups.map((group) => (
               <option key={group.id} value={String(group.id)}>
                 {group.nome}
@@ -135,7 +135,7 @@ export default function UserFormFields({
 
       {showGroups && !singleGroupSelect && (
         <div>
-          <label className="mb-2 block text-sm font-medium">Grupos vinculados</label>
+          <label className="mb-2 block text-sm font-medium">Equipes vinculadas</label>
           <div className="grid gap-2 rounded-lg border border-gray-200 p-3 md:grid-cols-2">
             {groups.map((group) => (
               <label key={group.id} className="flex items-center gap-2 text-sm text-gray-700">

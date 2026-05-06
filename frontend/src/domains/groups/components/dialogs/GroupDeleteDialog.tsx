@@ -37,7 +37,7 @@ export default function GroupDeleteDialog({
       await onConfirm(group.id);
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao excluir grupo');
+      setError(err instanceof Error ? err.message : 'Erro ao excluir equipe');
     } finally {
       setLoading(false);
     }
@@ -47,8 +47,8 @@ export default function GroupDeleteDialog({
     <Dialog
       isOpen={open}
       onClose={onClose}
-      title="Excluir grupo"
-      description="Essa acao remove o grupo da lista e deve ser feita com cuidado."
+      title="Excluir equipe"
+      description="Essa acao remove a equipe da lista e deve ser feita com cuidado."
       closeDisabled={loading}
       footer={
         <>
@@ -66,7 +66,7 @@ export default function GroupDeleteDialog({
             disabled={loading}
             className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
           >
-            {loading ? 'Excluindo...' : 'Excluir grupo'}
+            {loading ? 'Excluindo...' : 'Excluir equipe'}
           </button>
         </>
       }

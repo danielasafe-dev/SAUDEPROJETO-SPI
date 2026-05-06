@@ -20,7 +20,7 @@ const navItems = [
   { to: '/formularios', icon: ClipboardCheck, label: 'Formularios', permission: 'canViewForms' },
   { to: '/especialistas', icon: Stethoscope, label: 'Especialistas', permission: 'canViewSpecialists' },
   { to: '/pacientes', icon: Users, label: 'Pacientes', permission: 'canViewPatients' },
-  { to: '/grupos', icon: Layers3, label: 'Grupos', permission: 'canManageGroups' },
+  { to: '/grupos', icon: Layers3, label: 'Equipes', permission: 'canManageGroups' },
   { to: '/usuarios', icon: UserCog, label: 'Usuarios', permission: 'canManageUsers' },
 ] as const;
 

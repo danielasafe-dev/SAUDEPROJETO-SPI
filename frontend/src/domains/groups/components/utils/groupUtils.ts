@@ -21,7 +21,7 @@ export function validateGroupForm(
   _requireManager: boolean,
 ): string | null {
   if (!values.nome.trim()) {
-    return 'Informe o nome do grupo.';
+    return 'Informe o nome da equipe.';
   }
 
   if (values.gestorId) {

@@ -135,7 +135,40 @@ internal static class DevelopmentPortProcessCleaner
             processIds.Add(processId);
         }
 
+        foreach (var processId in FindListeningProcessIdsWithPowerShell(port))
+        {
+            processIds.Add(processId);
+        }
+
         return processIds;
+    }
+
+    private static IReadOnlyCollection<int> FindListeningProcessIdsWithPowerShell(int port)
+    {
+        using var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess\"",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        });
+
+        if (process is null)
+        {
+            return [];
+        }
+
+        var output = process.StandardOutput.ReadToEnd();
+        process.WaitForExit(5000);
+
+        return output
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line => int.TryParse(line, out var processId) ? processId : 0)
+            .Where(processId => processId > 0)
+            .Distinct()
+            .ToArray();
     }
 
     private static bool EndpointUsesPort(string endpoint, int port) =>

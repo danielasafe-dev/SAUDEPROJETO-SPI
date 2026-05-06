@@ -23,7 +23,7 @@ public sealed class FormQuestionOption
     }
 
     public int Id { get; private set; }
-    public int FormQuestionId { get; private set; }
+    public Guid FormQuestionId { get; private set; }
     public int Valor { get; private set; }
     public string Descricao { get; private set; } = string.Empty;
 

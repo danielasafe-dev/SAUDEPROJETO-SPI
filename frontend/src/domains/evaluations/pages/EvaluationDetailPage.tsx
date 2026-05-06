@@ -12,7 +12,7 @@ export default function EvaluationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [evalData, setEvalData] = useState<Evaluation | null>(null);
-  const [formQuestions, setFormQuestions] = useState<{ id: number; name: string }[] | null>(null);
+  const [formQuestions, setFormQuestions] = useState<{ id: string; name: string }[] | null>(null);
 
   useEffect(() => {
     getEvals().then((data: Evaluation[]) => {

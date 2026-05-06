@@ -113,7 +113,7 @@ export default function DashboardPage() {
         if (isCurrent) setGroups(data);
       })
       .catch((err) => {
-        console.error('Erro ao carregar grupos do dashboard:', err);
+        console.error('Erro ao carregar equipes do dashboard:', err);
       });
 
     return () => {
@@ -142,7 +142,7 @@ export default function DashboardPage() {
   const activeChips = useMemo(
     () => [
       filters.periodoLabel ? { key: 'periodo', label: `Período: ${filters.periodoLabel}` } : null,
-      filters.grupoId ? { key: 'grupo', label: `Grupo: ${filters.grupoNome ?? groups.find((group) => group.id === filters.grupoId)?.nome ?? filters.grupoId}` } : null,
+      filters.grupoId ? { key: 'grupo', label: `Equipe: ${filters.grupoNome ?? groups.find((group) => group.id === filters.grupoId)?.nome ?? filters.grupoId}` } : null,
       filters.risco ? { key: 'risco', label: `Risco: ${filters.risco}` } : null,
       filters.especialista ? { key: 'especialista', label: `Especialidade: ${filters.especialista}` } : null,
     ].filter((item): item is { key: string; label: string } => Boolean(item)),
@@ -394,13 +394,13 @@ function Metric({ label, value }: { label: string; value: string }) {
 function GroupFilter({ value, groups, onChange }: { value?: string; groups: Group[]; onChange: (groupId: string) => void }) {
   return (
     <label className="rounded-xl border border-blue-100 bg-white/80 px-3 py-2">
-      <span className="block text-xs font-semibold text-gray-500">Grupo</span>
+      <span className="block text-xs font-semibold text-gray-500">Equipe</span>
       <select
         value={value ?? ''}
         onChange={(event) => onChange(event.target.value)}
         className="mt-0.5 w-full min-w-0 bg-transparent text-sm font-extrabold text-gray-900 outline-none"
       >
-        <option value="">Todos os grupos</option>
+        <option value="">Todas as equipes</option>
         {groups.map((group) => (
           <option key={group.id} value={group.id}>
             {group.nome}

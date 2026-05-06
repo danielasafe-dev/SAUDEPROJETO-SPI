@@ -349,6 +349,7 @@ export async function createEvaluation(data: { patientId: string; respostas: Rec
       avaliadorNome: 'Avaliador',
       respostas: data.respostas,
       scoreTotal: total,
+      pesoTotal: Object.keys(data.respostas).length,
       classificacao: cls,
       observacoes: data.observacoes?.trim() || null,
       dataAvaliacao: new Date().toISOString(),

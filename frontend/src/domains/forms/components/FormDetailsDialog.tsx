@@ -38,7 +38,7 @@ export default function FormDetailsDialog({ form, open, onClose }: FormDetailsDi
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <InfoRow label="Nome" value={form.nome} />
-            <InfoRow label="Grupo" value={form.groupNome || 'Sem grupo'} />
+            <InfoRow label="Equipe" value={form.groupNome || 'Sem equipe'} />
             <InfoRow label="Criado por" value={form.criadoPorNome} />
             <InfoRow label="Status" value={form.ativo ? 'Ativo' : 'Inativo'} />
             <InfoRow label="Perguntas" value={String(form.perguntas.length)} />

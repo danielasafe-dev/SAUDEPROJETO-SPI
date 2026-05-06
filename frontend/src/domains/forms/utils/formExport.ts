@@ -55,7 +55,7 @@ function buildPdfDoc(form: Formulario): jsPDF {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(80, 80, 80);
   const metaParts: string[] = [];
-  if (form.groupNome) metaParts.push(`Grupo: ${form.groupNome}`);
+  if (form.groupNome) metaParts.push(`Equipe: ${form.groupNome}`);
   metaParts.push(`Criado por: ${form.criadoPorNome}`);
   metaParts.push(`${form.perguntas.length} pergunta(s)   •   Peso máximo: ${form.pesoTotal}`);
   doc.text(metaParts.join('     '), mL + 3, y + 4.8);

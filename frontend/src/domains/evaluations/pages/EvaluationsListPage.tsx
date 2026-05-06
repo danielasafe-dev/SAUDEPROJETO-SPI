@@ -19,8 +19,8 @@ export default function EvaluationsListPage() {
   const [evals, setEvals] = useState<Evaluation[]>([]);
   const [filter, setFilter] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [selectedEvalId, setSelectedEvalId] = useState<number | null>(null);
-  const [exportingId, setExportingId] = useState<number | null>(null);
+  const [selectedEvalId, setSelectedEvalId] = useState<string | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ evaluation: Evaluation; form?: Formulario } | null>(null);
 
   async function handleOpenPdfPreview(e: Evaluation) {

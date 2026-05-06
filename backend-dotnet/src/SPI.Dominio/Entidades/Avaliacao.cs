@@ -38,14 +38,14 @@ public sealed class Evaluation : Entity, IAggregateRoot
     }
 
     public Evaluation(
-        int patientId,
-        int avaliadorId,
-        int groupId,
-        int formTemplateId,
-        Dictionary<int, int> respostas,
+        Guid patientId,
+        Guid avaliadorId,
+        Guid groupId,
+        Guid formTemplateId,
+        Dictionary<string, int> respostas,
         IReadOnlyCollection<FormQuestion> questions,
-        IReadOnlyCollection<FormClassificationRange> classificationRanges)
-         string? observacoes = null)
+        IReadOnlyCollection<FormClassificationRange> classificationRanges,
+        string? observacoes = null)
     {
         if (patientId == Guid.Empty)
         {
@@ -67,6 +67,11 @@ public sealed class Evaluation : Entity, IAggregateRoot
             throw new InvalidOperationException("Formulario invalido.");
         }
 
+        if (respostas is null)
+        {
+            throw new InvalidOperationException("Respostas obrigatorias.");
+        }
+
         if (questions.Count == 0)
         {
             throw new InvalidOperationException("Formulario sem perguntas.");
@@ -83,13 +88,10 @@ public sealed class Evaluation : Entity, IAggregateRoot
         AvaliadorId = avaliadorId;
         GroupId = groupId;
         FormTemplateId = formTemplateId;
-        Respostas = respostas ?? throw new InvalidOperationException("Respostas obrigatorias.");
+        Respostas = respostas;
         PesoTotal = questions.Sum(x => x.Peso);
-        ScoreTotal = Math.Round(
-            questions.Where(x => Respostas.ContainsKey(x.Id.ToString())).Sum(x => x.Peso * Respostas[x.Id.ToString()]),
-            2,
-            MidpointRounding.AwayFromZero);
-        Classificacao = "formulario";
+        ScoreTotal = SPIClassificationService.CalculateScore(Respostas);
+        Classificacao = SPIClassificationService.ClassifyWithRanges(ScoreTotal, classificationRanges);
         Observacoes = NormalizeObservations(observacoes);
         DataAvaliacao = DateTime.UtcNow;
     }

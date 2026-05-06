@@ -46,7 +46,7 @@ export default function GroupsPage() {
       try {
         await loadData();
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar grupos');
+        setError(err instanceof Error ? err.message : 'Erro ao carregar equipes');
       } finally {
         setLoading(false);
       }
@@ -117,7 +117,7 @@ export default function GroupsPage() {
       ),
     },
     {
-      header: 'Grupo',
+      header: 'Equipe',
       sortKey: (g) => g.nome,
       render: (g) => <span className="font-medium text-gray-900">{g.nome}</span>,
     },
@@ -151,9 +151,9 @@ export default function GroupsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-xl font-bold">Grupos</h2>
+          <h2 className="text-xl font-bold">Equipes</h2>
           <p className="text-sm text-gray-500">
-            {filteredGroups.length} grupo(s) exibido(s) de {groups.length} cadastrado(s)
+            {filteredGroups.length} equipe(s) exibida(s) de {groups.length} cadastrada(s)
           </p>
         </div>
 
@@ -163,16 +163,16 @@ export default function GroupsPage() {
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
         >
           <Plus className="h-4 w-4" />
-          Novo grupo
+          Nova equipe
         </button>
       </div>
 
       <SearchFiltersPanel
-        title="Encontre grupos e gestores com mais rapidez"
-        description="Busque por nome do grupo ou pelo gestor responsavel para localizar o que precisa."
-        searchLabel="Buscar grupo"
+        title="Encontre equipes e gestores com mais rapidez"
+        description="Busque por nome da equipe ou pelo gestor responsavel para localizar o que precisa."
+        searchLabel="Buscar equipe"
         searchValue={search}
-        searchPlaceholder="Buscar por nome do grupo ou gestor"
+        searchPlaceholder="Buscar por nome da equipe ou gestor"
         onSearchChange={setSearch}
         hasActiveFilters={search.trim().length > 0}
         onClear={() => setSearch('')}
@@ -186,14 +186,14 @@ export default function GroupsPage() {
 
       {loading ? (
         <div className="rounded-xl border border-gray-200 bg-white px-6 py-10 text-center text-sm text-gray-500">
-          Carregando grupos...
+          Carregando equipes...
         </div>
       ) : (
         <DataTable
           data={filteredGroups}
           columns={columns}
           keyExtractor={(g) => g.id}
-          emptyMessage="Nenhum grupo encontrado com os filtros atuais."
+          emptyMessage="Nenhuma equipe encontrada com os filtros atuais."
         />
       )}
 

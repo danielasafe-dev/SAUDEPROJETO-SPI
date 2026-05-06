@@ -131,7 +131,7 @@ export default function PatientFormFields({
 
       {showGroupField && (
         <div className="md:col-span-2">
-          <FieldLabel required>Grupo</FieldLabel>
+          <FieldLabel required>Equipe</FieldLabel>
           <select
             value={values.groupId}
             onChange={(event) => onChange('groupId', event.target.value)}
@@ -139,7 +139,7 @@ export default function PatientFormFields({
             disabled={disabled}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
-            <option value="">Selecione o grupo</option>
+            <option value="">Selecione a equipe</option>
             {groups.map((group) => (
               <option key={group.id} value={String(group.id)}>
                 {group.nome}

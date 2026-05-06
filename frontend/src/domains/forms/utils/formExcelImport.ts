@@ -50,7 +50,7 @@ export function parseExcelForm(file: File): Promise<FormImportData> {
         if (perguntas.length === 0) throw new Error('Nenhuma pergunta encontrada na planilha.');
 
         const faixas: FormImportData['faixas'] = [];
-        const faixasSheetName = wb.SheetNames.find((n) => n.toLowerCase() === 'faixas');
+        const faixasSheetName = wb.SheetNames.find((n: string) => n.toLowerCase() === 'faixas');
         if (faixasSheetName) {
           const wsFaixas = wb.Sheets[faixasSheetName];
           const faixaRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsFaixas);

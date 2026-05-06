@@ -153,7 +153,7 @@ public sealed class FormsAppService : IFormsAppService
         return updated.ToDto();
     }
 
-    public async Task DeactivateAsync(int formId, int actorUserId, CancellationToken cancellationToken = default)
+    public async Task DeactivateAsync(Guid formId, Guid actorUserId, CancellationToken cancellationToken = default)
     {
         var actor = await _userRepository.GetDetailedByIdAsync(actorUserId, cancellationToken)
             ?? throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
@@ -173,7 +173,7 @@ public sealed class FormsAppService : IFormsAppService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task ActivateAsync(int formId, int actorUserId, CancellationToken cancellationToken = default)
+    public async Task ActivateAsync(Guid formId, Guid actorUserId, CancellationToken cancellationToken = default)
     {
         var actor = await _userRepository.GetDetailedByIdAsync(actorUserId, cancellationToken)
             ?? throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");

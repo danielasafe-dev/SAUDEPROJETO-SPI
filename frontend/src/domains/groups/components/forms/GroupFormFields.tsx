@@ -21,14 +21,14 @@ export default function GroupFormFields({
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="md:col-span-2">
-        <label className="mb-1 block text-sm font-medium">Nome do grupo</label>
+        <label className="mb-1 block text-sm font-medium">Nome da equipe</label>
         <input
           value={values.nome}
           onChange={(event) => onChange('nome', event.target.value)}
           required
           disabled={disabled}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
-          placeholder="Nome do grupo"
+          placeholder="Nome da equipe"
         />
       </div>
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
     <None Remove="App_Data\spi.db" />
     <None Remove="App_Data\spi.db-shm" />
@@ -21,7 +21,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 </Project>
-
-
-
 

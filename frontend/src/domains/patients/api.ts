@@ -60,7 +60,7 @@ export async function createPatient(data: CreatePatientInput): Promise<Patient> 
       idade: calculateAge(data.data_nascimento),
       avaliador_id: null,
       group_id: data.groupId ?? null,
-      group_nome: 'Grupo Padrao',
+      group_nome: 'Equipe Padrao',
       criado_em: new Date().toISOString(),
     });
 

@@ -19,7 +19,7 @@ public partial class AddFormClassificationRanges : Migration
                 CREATE TABLE dbo.form_classification_ranges
                 (
                     id               INT IDENTITY(1,1) NOT NULL,
-                    form_template_id INT NOT NULL,
+                    form_template_id UNIQUEIDENTIFIER NOT NULL,
                     score_min        DECIMAL(10,2) NOT NULL,
                     score_max        DECIMAL(10,2) NOT NULL,
                     rotulo           NVARCHAR(200) NOT NULL,

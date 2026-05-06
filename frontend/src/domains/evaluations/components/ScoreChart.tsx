@@ -9,7 +9,7 @@ import { SPI_QUESTIONS } from '../utils/questions';
 
 interface ScoreChartProps {
   respostas: Record<string, number>;
-  questions?: { id: number; name: string }[];
+  questions?: { id: string; name: string }[];
 }
 
 export default function ScoreChart({ respostas, questions }: ScoreChartProps) {

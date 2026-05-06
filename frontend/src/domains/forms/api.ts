@@ -17,11 +17,11 @@ export async function updateForm(id: string, data: CriarFormularioPayload): Prom
   return api.put(`/api/forms/${id}`, data).then((r) => r.data);
 }
 
-export async function deactivateForm(id: number): Promise<void> {
+export async function deactivateForm(id: string): Promise<void> {
   return api.delete(`/api/forms/${id}`).then(() => {});
 }
 
-export async function activateForm(id: number): Promise<void> {
+export async function activateForm(id: string): Promise<void> {
   return api.patch(`/api/forms/${id}/activate`).then(() => {});
 }
 

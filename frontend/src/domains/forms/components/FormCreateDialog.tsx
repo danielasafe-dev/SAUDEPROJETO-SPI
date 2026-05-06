@@ -255,7 +255,7 @@ export default function FormCreateDialog({ isOpen, onClose, onCreated, initialDa
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Grupo</label>
+            <label className="block text-sm font-medium mb-1">Equipe</label>
             {!isAdmin && grupos.length === 1 ? (
               <input
                 value={grupos[0].nome}
@@ -269,8 +269,8 @@ export default function FormCreateDialog({ isOpen, onClose, onCreated, initialDa
                 required={!isAdmin}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
               >
-                {isAdmin && <option value="">Todos os grupos</option>}
-                {!isAdmin && <option value="">Selecione um grupo</option>}
+                {isAdmin && <option value="">Todas as equipes</option>}
+                {!isAdmin && <option value="">Selecione uma equipe</option>}
                 {grupos.map((g) => (
                   <option key={g.id} value={g.id}>{g.nome}</option>
                 ))}

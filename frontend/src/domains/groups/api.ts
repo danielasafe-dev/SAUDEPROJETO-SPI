@@ -49,7 +49,7 @@ export async function updateGroup(id: string, data: UpdateGroupInput, manager?: 
 
     const group = mockGroups.find((item) => (item as Group).id === id);
     if (!group) {
-      throw new Error('Grupo nao encontrado.');
+      throw new Error('Equipe nao encontrada.');
     }
 
     const normalized = group as Group;

@@ -63,7 +63,7 @@ export default function GroupEditDialog({
       await onSubmit(group.id, mapGroupFormToInput(values));
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao editar grupo');
+      setError(err instanceof Error ? err.message : 'Erro ao editar equipe');
     } finally {
       setLoading(false);
     }
@@ -73,8 +73,8 @@ export default function GroupEditDialog({
     <Dialog
       isOpen={open}
       onClose={onClose}
-      title="Editar grupo"
-      description="Atualize os dados principais do grupo selecionado."
+      title="Editar equipe"
+      description="Atualize os dados principais da equipe selecionada."
       size="lg"
       closeDisabled={loading}
       footer={
@@ -105,7 +105,7 @@ export default function GroupEditDialog({
           managers={managers}
           disabled={loading}
           showManagerField={requireManager}
-          managerHint={requireManager ? undefined : 'Esse grupo permanece vinculado ao gestor logado.'}
+          managerHint={requireManager ? undefined : 'Essa equipe permanece vinculada ao gestor logado.'}
         />
 
         {error && (

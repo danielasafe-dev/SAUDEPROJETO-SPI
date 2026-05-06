@@ -55,7 +55,7 @@ export default function GroupCreateDialog({
       await onSubmit(mapGroupFormToInput(values));
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar grupo');
+      setError(err instanceof Error ? err.message : 'Erro ao criar equipe');
     } finally {
       setLoading(false);
     }
@@ -65,8 +65,8 @@ export default function GroupCreateDialog({
     <Dialog
       isOpen={open}
       onClose={onClose}
-      title="Novo grupo"
-      description="Preencha os dados principais para cadastrar um novo grupo."
+      title="Nova equipe"
+      description="Preencha os dados principais para cadastrar uma nova equipe."
       size="lg"
       closeDisabled={loading}
       footer={
@@ -85,7 +85,7 @@ export default function GroupCreateDialog({
             disabled={loading}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
           >
-            {loading ? 'Salvando...' : 'Salvar grupo'}
+            {loading ? 'Salvando...' : 'Salvar equipe'}
           </button>
         </>
       }
@@ -97,7 +97,7 @@ export default function GroupCreateDialog({
           managers={managers}
           disabled={loading}
           showManagerField={requireManager}
-          managerHint={requireManager ? undefined : 'Esse grupo sera criado com o gestor logado como responsavel.'}
+          managerHint={requireManager ? undefined : 'Essa equipe sera criada com o gestor logado como responsavel.'}
         />
 
         {error && (

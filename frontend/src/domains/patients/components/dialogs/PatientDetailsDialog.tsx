@@ -105,7 +105,7 @@ export default function PatientDetailsDialog({
                 <InfoRow label="Responsavel" value={patient.nome_responsavel || 'Nao informado'} />
                 <InfoRow label="Telefone" value={formatPhone(patient.telefone)} />
                 <InfoRow label="E-mail" value={patient.email || 'Nao informado'} />
-                <InfoRow label="Grupo" value={patient.group_nome || 'Nao informado'} />
+                <InfoRow label="Equipe" value={patient.group_nome || 'Nao informado'} />
                 <InfoRow label="Cadastro" value={formatDate(patient.criado_em)} />
                 <InfoRow label="Observacoes" value={patient.observacoes || 'Nao informado'} />
                 <InfoRow label="Identificador" value={`#${patient.id}`} />

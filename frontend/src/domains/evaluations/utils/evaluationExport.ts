@@ -4,7 +4,7 @@ import type { Formulario } from '@/domains/forms/types';
 import { SPI_QUESTIONS } from './questions';
 
 interface NormalizedQuestion {
-  id: number;
+  id: string;
   texto: string;
   opcoes: { valor: number; descricao: string }[];
 }

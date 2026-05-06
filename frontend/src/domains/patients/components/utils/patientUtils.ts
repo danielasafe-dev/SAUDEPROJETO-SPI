@@ -142,7 +142,7 @@ export function validatePatientForm(
   }
 
   if (options?.requireGroup && !values.groupId) {
-    return 'Selecione o grupo do paciente.';
+    return 'Selecione a equipe do paciente.';
   }
 
   if (values.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {

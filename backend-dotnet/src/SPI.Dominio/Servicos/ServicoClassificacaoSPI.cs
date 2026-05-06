@@ -1,3 +1,5 @@
+using SPI.Domain.Entities;
+
 namespace SPI.Domain.Services;
 
 public static class SPIClassificationService

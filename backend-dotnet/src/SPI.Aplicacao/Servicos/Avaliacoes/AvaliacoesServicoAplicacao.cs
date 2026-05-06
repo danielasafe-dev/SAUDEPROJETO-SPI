@@ -113,7 +113,7 @@ public sealed class EvaluationsAppService : IEvaluationsAppService
                 form.Id,
                 request.Respostas,
                 form.Questions.ToArray(),
-                form.ClassificationRanges.ToArray());
+                form.ClassificationRanges.ToArray(),
                 request.Observacoes);
         }
         else

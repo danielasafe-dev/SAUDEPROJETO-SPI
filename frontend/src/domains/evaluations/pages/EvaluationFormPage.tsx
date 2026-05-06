@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getClassification } from '../utils/scoring';
+import { calcScore, getClassification } from '../utils/scoring';
 import type { EvaluationAnswers, Question } from '../types';
 import QuestionCard from '../components/QuestionCard';
 import ScoreChart from '../components/ScoreChart';
@@ -12,6 +12,8 @@ import type { Group } from '@/domains/groups/types';
 import { createPatient, getReusablePatients, type CreatePatientInput } from '@/domains/patients/api';
 import PatientCreateDialog from '@/domains/patients/components/dialogs/PatientCreateDialog';
 import type { Patient } from '@/types';
+import { SPI_QUESTIONS } from '../utils/questions';
+import EvaluationReferralDecision from '../components/EvaluationReferralDecision';
 
 interface EvaluationFormPageProps {
   embedded?: boolean;
@@ -19,13 +21,14 @@ interface EvaluationFormPageProps {
 }
 
 interface ResultData {
+  evaluationId: string;
   score: number;
   pesoTotal: number;
   classification: string;
   color: string;
   cls: string;
-  answers: Record<number, number>;
-  questions: { id: number; name: string }[];
+  answers: Record<string, number>;
+  questions: { id: string; name: string }[];
 }
 const DEFAULT_FORM_ID = 'default';
 
@@ -43,6 +46,8 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [answers, setAnswers] = useState<EvaluationAnswers>({});
   const [observations, setObservations] = useState('');
+  const [observationsManuallyEdited, setObservationsManuallyEdited] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resultData, setResultData] = useState<ResultData | null>(null);
@@ -63,6 +68,9 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
     setSelectedFormId(formId);
     setAnswers({});
     setError('');
+    setObservations('');
+    setObservationsManuallyEdited(false);
+    setCopyFeedback('');
 
     if (formId === DEFAULT_FORM_ID) {
       setActiveQuestions(SPI_QUESTIONS);
@@ -79,6 +87,7 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
             const maxScore = Math.max(2, Math.round(p.peso));
             return {
               id: p.id ?? String(idx + 1),
+              ordem: p.ordem || idx + 1,
               name: p.texto,
               options: Array.from({ length: maxScore }, (_, i) => ({
                 score: i + 1,
@@ -100,6 +109,43 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
   const total = activeQuestions.length;
   const answered = Object.keys(answers).length;
   const progress = total > 0 ? (answered / total) * 100 : 0;
+  const currentScore = calcScore(answers);
+  const currentPesoTotal = activeQuestions.reduce(
+    (sum, question) => sum + Math.max(...question.options.map((option) => option.score), 0),
+    0
+  );
+  const selectedForm = formularios.find((f) => f.id === selectedFormId);
+  const currentClassification = getObservationClassification(
+    currentScore,
+    [...(selectedForm?.faixas ?? [])].sort((a, b) => a.scoreMin - b.scoreMin)
+  );
+
+  useEffect(() => {
+    if (total === 0 || answered < total || observationsManuallyEdited) {
+      return;
+    }
+
+    setObservations(buildObservationSuggestion(currentScore, currentPesoTotal, currentClassification, answers, activeQuestions));
+  }, [answered, total, currentScore, currentPesoTotal, currentClassification, observationsManuallyEdited, answers, activeQuestions]);
+
+  const handleGenerateObservation = () => {
+    setObservations(buildObservationSuggestion(currentScore, currentPesoTotal, currentClassification, answers, activeQuestions));
+    setObservationsManuallyEdited(false);
+    setCopyFeedback('');
+  };
+
+  const handleCopyObservation = async () => {
+    if (!observations.trim()) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(observations);
+      setCopyFeedback('Texto copiado');
+    } catch {
+      setCopyFeedback('Nao foi possivel copiar');
+    }
+  };
 
   const handleSubmit = async () => {
     if (mode === 'existing' && !existingPatientId) {
@@ -115,15 +161,20 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
       return;
     }
     if (!selectedGroupId) {
-      setError('Selecione o grupo responsavel por esta avaliacao.');
+      setError('Selecione a equipe responsavel por esta avaliacao.');
       return;
     }
 
     setError('');
     setLoading(true);
     try {
-      const pid = mode === 'existing' ? existingPatientId! : Date.now();
-      const created = await createEvaluation({ patientId: pid, respostas: answers, formId: selectedFormId! });
+      const created = await createEvaluation({
+        patientId: existingPatientId!,
+        respostas: answers,
+        formId: formIdToSend,
+        groupId: selectedGroupId,
+        observacoes: observations.trim() || undefined,
+      });
       const score = Number(created.scoreTotal);
       const pesoTotal = Number(created.pesoTotal);
       const form = formularios.find((f) => f.id === selectedFormId);
@@ -145,27 +196,7 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
         cls = result.cls;
       }
       const questions = activeQuestions.map((q) => ({ id: q.id, name: q.name }));
-      setResultData({ score, pesoTotal, classification, color, cls, answers, questions });
-      const pid = existingPatientId!;
-      const createdEvaluation = await createEvaluation({
-        patientId: pid,
-        respostas: answers,
-        formId: formIdToSend,
-        groupId: selectedGroupId,
-        observacoes: observations.trim() || undefined,
-      });
-      const score = calcScore(answers);
-      const classification = getClassification(score);
-      navigate('/resultado', {
-        state: {
-          ...classification,
-          evaluationId: createdEvaluation.id,
-          patientId: pid,
-          patientNome: createdEvaluation.patientNome ?? createdPatient?.nome,
-          observacoes: createdEvaluation.observacoes ?? (observations.trim() || null),
-          answers,
-        },
-      });
+      setResultData({ evaluationId: created.id, score, pesoTotal, classification, color, cls, answers, questions });
     } catch {
       setError('Erro ao salvar avaliacao');
     } finally {
@@ -267,6 +298,8 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
 
             <ScoreChart respostas={resultData.answers} questions={resultData.questions} />
 
+            <EvaluationReferralDecision evaluationId={resultData.evaluationId} />
+
             <div className="rounded-xl border border-gray-200 bg-white p-4">
               <h3 className="mb-3 text-sm font-semibold text-gray-700">Detalhamento por Dimensao</h3>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -312,7 +345,7 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
               {' '}·{' '}
               <button
                 type="button"
-                onClick={() => { setSelectedFormId(null); setAnswers({}); setError(''); }}
+                onClick={() => { setSelectedFormId(null); setAnswers({}); setObservations(''); setObservationsManuallyEdited(false); setCopyFeedback(''); setError(''); }}
                 className="text-blue-600 hover:underline"
               >
                 trocar formulario
@@ -331,53 +364,31 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
         </div>
 
         {/* Paciente */}
-        <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-gray-700">Paciente</h3>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setMode('existing')}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${mode === 'existing' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
-            >
-              Paciente Existente
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('new')}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${mode === 'new' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
-            >
-              Novo Paciente
-            </button>
-          </div>
-          {mode === 'existing' ? (
-            <ExistingPatientSelector value={existingPatientId} onChange={setExistingPatientId} />
-          ) : (
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nome completo do paciente"
-            />
-          )}
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-1">
+          <button
+            type="button"
+            onClick={() => { setMode('existing'); setError(''); }}
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+              mode === 'existing'
+                ? 'bg-white text-blue-700 shadow-sm'
+                : 'text-gray-600 hover:bg-white/70'
+            }`}
+          >
+            Paciente existente
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('new'); setError(''); setPatientDialogOpen(true); }}
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+              mode === 'new'
+                ? 'bg-white text-blue-700 shadow-sm'
+                : 'text-gray-600 hover:bg-white/70'
+            }`}
+          >
+            Novo paciente
+          </button>
         </div>
 
-        {/* Perguntas */}
-        <div className="space-y-3">
-          {activeQuestions.map((q) => (
-            <QuestionCard
-              key={q.id}
-              question={q}
-              value={answers[q.id] as number | undefined}
-              onChange={(score) => setAnswers((prev) => ({ ...prev, [q.id]: score }))}
-            />
-          ))}
-        </div>
-
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
-          </div>
-        )}
         {mode === 'existing' ? (
           <ExistingPatientSelector value={existingPatientId} createdPatient={createdPatient} onChange={setExistingPatientId} />
         ) : (
@@ -395,52 +406,91 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
         )}
 
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">Grupo responsavel pela avaliacao</label>
+          <label className="block text-sm font-medium text-gray-700">Equipe responsavel pela avaliacao</label>
           <select
             value={selectedGroupId ?? ''}
             onChange={(event) => setSelectedGroupId(event.target.value || null)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Selecione o grupo</option>
+            <option value="">Selecione a equipe</option>
             {groups.map((group) => (
               <option key={group.id} value={group.id}>
                 {group.nome}
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-500">O paciente pode ser reutilizado, mas a avaliacao ficara vinculada a este grupo.</p>
+          <p className="text-xs text-gray-500">O paciente pode ser reutilizado, mas a avaliacao ficara vinculada a esta equipe.</p>
         </div>
-      </div>
 
-      {/* Perguntas */}
-      <div className="space-y-3">
-        {activeQuestions.map((q) => (
-          <QuestionCard
-            key={q.id}
-            question={q}
-            value={answers[q.id] as number | undefined}
-            onChange={(score) => setAnswers((prev) => ({ ...prev, [q.id]: score }))}
+        {/* Perguntas */}
+        <div className="space-y-3">
+          {activeQuestions.map((q, idx) => (
+            <QuestionCard
+              key={q.id}
+              question={q}
+              displayNumber={idx + 1}
+              value={answers[q.id] as number | undefined}
+              onChange={(score) => setAnswers((prev) => ({ ...prev, [q.id]: score }))}
+            />
+          ))}
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">Observacao do avaliador</label>
+              <p className="mt-1 text-xs text-gray-500">
+                Texto sugerido automaticamente com base na pontuacao. Pode ser editado antes de salvar.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleGenerateObservation}
+                disabled={answered < total}
+                className="rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Gerar texto
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyObservation}
+                disabled={!observations.trim()}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Copiar
+              </button>
+            </div>
+          </div>
+          {answered < total ? (
+            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+              Responda todas as perguntas para gerar a sugestao completa.
+            </p>
+          ) : null}
+          <textarea
+            value={observations}
+            onChange={(event) => {
+              setObservations(event.target.value.slice(0, 2000));
+              setObservationsManuallyEdited(true);
+              setCopyFeedback('');
+            }}
+            rows={7}
+            className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Registre aqui algo relevante que nao entrou nas perguntas da avaliacao."
           />
-        ))}
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <label className="block text-sm font-semibold text-gray-700">Observacao do avaliador</label>
-        <textarea
-          value={observations}
-          onChange={(event) => setObservations(event.target.value.slice(0, 2000))}
-          rows={4}
-          className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Registre aqui algo relevante que nao entrou nas perguntas da avaliacao."
-        />
-        <p className="mt-1 text-right text-xs text-gray-400">{observations.length}/2000</p>
-      </div>
-
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
+          <div className="mt-1 flex items-center justify-between gap-3 text-xs">
+            <span className={copyFeedback.includes('copiado') ? 'text-green-600' : 'text-gray-400'}>
+              {copyFeedback}
+            </span>
+            <span className="text-gray-400">{observations.length}/2000</span>
+          </div>
         </div>
-      )}
+
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
 
         <div className={`flex ${embedded ? 'justify-end gap-3 pb-2' : 'justify-center pb-8'}`}>
           {embedded && onCancel && (
@@ -472,8 +522,57 @@ export default function EvaluationFormPage({ embedded = false, onCancel }: Evalu
         requireGroupSelection={groups.length > 0}
         onSubmit={handleCreatePatient}
       />
-    </div>
+    </>
   );
+}
+
+function getObservationClassification(
+  score: number,
+  ranges: { scoreMin: number; scoreMax: number; rotulo: string }[]
+) {
+  if (ranges.length > 0) {
+    const match = ranges.find((range) => score >= range.scoreMin && score <= range.scoreMax);
+    return match?.rotulo ?? ranges.at(-1)?.rotulo ?? getClassification(score).classification;
+  }
+
+  return getClassification(score).classification;
+}
+
+function buildObservationSuggestion(
+  score: number,
+  pesoTotal: number,
+  classification: string,
+  answers: EvaluationAnswers,
+  questions: Question[]
+) {
+  const normalizedClassification = classification.toLocaleLowerCase('pt-BR');
+  const intensityText = normalizedClassification.includes('grave')
+    ? 'maior intensidade de sinais no instrumento aplicado'
+    : normalizedClassification.includes('leve') || normalizedClassification.includes('moderado')
+      ? 'presenca de sinais em intensidade leve a moderada no instrumento aplicado'
+      : 'baixa intensidade de sinais no instrumento aplicado';
+
+  const highlightedDimensions = questions
+    .map((question) => ({
+      name: question.name,
+      score: answers[question.id] ?? 0,
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((item) => `${item.name} (${item.score})`);
+
+  const dimensionsText = highlightedDimensions.length > 0
+    ? `Os maiores escores apareceram em: ${highlightedDimensions.join(', ')}.`
+    : 'Nao ha dimensoes destacadas ate o momento.';
+
+  return [
+    `A avaliacao apresentou pontuacao total de ${score}/${pesoTotal}, com classificacao "${classification}".`,
+    `De forma geral, o resultado sugere ${intensityText}.`,
+    dimensionsText,
+    'Este texto e uma observacao generica de apoio ao registro e nao substitui analise clinica, historico do paciente, observacao direta ou avaliacao multiprofissional.',
+    'Recomenda-se correlacionar a pontuacao com os dados coletados durante o atendimento e registrar condutas conforme o fluxo da equipe.',
+  ].join('\n\n');
 }
 
 function ExistingPatientSelector({

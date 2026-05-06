@@ -7,13 +7,13 @@ import ScoreChart from './ScoreChart';
 import { SPI_QUESTIONS } from '../utils/questions';
 
 interface EvaluationDetailDialogProps {
-  evalId: number | null;
+  evalId: string | null;
   onClose: () => void;
 }
 
 export default function EvaluationDetailDialog({ evalId, onClose }: EvaluationDetailDialogProps) {
   const [evalData, setEvalData] = useState<Evaluation | null>(null);
-  const [formQuestions, setFormQuestions] = useState<{ id: number; name: string }[] | null>(null);
+  const [formQuestions, setFormQuestions] = useState<{ id: string; name: string }[] | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
