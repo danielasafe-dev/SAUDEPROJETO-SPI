@@ -55,7 +55,7 @@ public sealed class DashboardAppService : IDashboardAppService
             var patients = await _patientRepository.ListAsync(cancellationToken);
             var evaluations = await _evaluationRepository.ListDetailedAsync(cancellationToken);
             var filteredEvaluations = ApplyFilters(evaluations, risco, especialista, dataInicio, dataFim, grupoId);
-            var forms = await _formRepository.ListAsync(cancellationToken);
+            var forms = await _formRepository.ListAsync(cancellationToken: cancellationToken);
             var groups = await _groupRepository.ListAsync(cancellationToken);
 
             return new DashboardResponseDto
@@ -83,7 +83,7 @@ public sealed class DashboardAppService : IDashboardAppService
             scopedUsers = await _userRepository.ListByOrganizationIdAsync(orgId, cancellationToken);
             scopedPatients = await _patientRepository.ListByOrganizationIdAsync(orgId, cancellationToken);
             scopedEvaluations = await _evaluationRepository.ListDetailedByOrganizationIdAsync(orgId, cancellationToken);
-            scopedForms = await _formRepository.ListByOrganizationIdAsync(orgId, cancellationToken);
+            scopedForms = await _formRepository.ListByOrganizationIdAsync(orgId, cancellationToken: cancellationToken);
             scopedGroups = await _groupRepository.ListByOrganizationIdAsync(orgId, cancellationToken);
         }
         else
@@ -91,7 +91,7 @@ public sealed class DashboardAppService : IDashboardAppService
             scopedUsers = await _userRepository.ListByGroupIdsAsync(accessScope.OperationalGroupIds, cancellationToken);
             scopedPatients = await _patientRepository.ListByGroupIdsAsync(accessScope.OperationalGroupIds, cancellationToken);
             scopedEvaluations = await _evaluationRepository.ListDetailedByGroupIdsAsync(accessScope.OperationalGroupIds, cancellationToken);
-            scopedForms = await _formRepository.ListByGroupIdsAsync(accessScope.OperationalGroupIds, cancellationToken);
+            scopedForms = await _formRepository.ListByGroupIdsAsync(accessScope.OperationalGroupIds, cancellationToken: cancellationToken);
             scopedGroups = await _groupRepository.ListByIdsAsync(
                 actor.Role.HasManagerPrivileges() ? accessScope.ManagedGroupIds : accessScope.OperationalGroupIds,
                 cancellationToken);

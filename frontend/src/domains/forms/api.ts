@@ -1,8 +1,10 @@
 import { api } from '@/shared/api/client';
 import type { Formulario, CriarFormularioPayload, Grupo } from './types';
 
-export async function getForms(): Promise<Formulario[]> {
-  return api.get('/api/forms').then((r) => r.data);
+export async function getForms(options?: { includeInactive?: boolean }): Promise<Formulario[]> {
+  return api.get('/api/forms', {
+    params: options?.includeInactive ? { includeInactive: true } : undefined,
+  }).then((r) => r.data);
 }
 
 export async function getFormById(id: string): Promise<Formulario> {

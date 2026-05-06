@@ -26,7 +26,7 @@ public sealed class FormsAppService : IFormsAppService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IReadOnlyCollection<FormResponseDto>> ListAsync(Guid actorUserId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<FormResponseDto>> ListAsync(Guid actorUserId, bool includeInactive = false, CancellationToken cancellationToken = default)
     {
         var actor = await _userRepository.GetDetailedByIdAsync(actorUserId, cancellationToken)
             ?? throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
@@ -40,15 +40,15 @@ public sealed class FormsAppService : IFormsAppService
         List<SPI.Domain.Entities.FormTemplate> forms;
         if (actor.Role == UserRole.Analyst)
         {
-            forms = await _formRepository.ListAsync(cancellationToken);
+            forms = await _formRepository.ListAsync(includeInactive, cancellationToken);
         }
         else if (accessScope.IsAdmin && accessScope.OrganizationId.HasValue)
         {
-            forms = await _formRepository.ListByOrganizationIdAsync(accessScope.OrganizationId.Value, cancellationToken);
+            forms = await _formRepository.ListByOrganizationIdAsync(accessScope.OrganizationId.Value, includeInactive, cancellationToken);
         }
         else
         {
-            forms = await _formRepository.ListByGroupIdsAsync(accessScope.OperationalGroupIds, cancellationToken);
+            forms = await _formRepository.ListByGroupIdsAsync(accessScope.OperationalGroupIds, includeInactive, cancellationToken);
         }
 
         return forms.Select(x => x.ToDto()).ToList();

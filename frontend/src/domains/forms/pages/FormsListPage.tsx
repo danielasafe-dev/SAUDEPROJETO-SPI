@@ -43,7 +43,7 @@ export default function FormsListPage() {
   async function loadForms() {
     setLoading(true);
     try {
-      const data = await getForms();
+      const data = await getForms({ includeInactive: canManageForms() });
       setForms(data);
     } catch {
       // silently fail
@@ -75,12 +75,14 @@ export default function FormsListPage() {
     const acao = f.ativo ? 'desativar' : 'reativar';
     if (!window.confirm(`Deseja ${acao} o formulário "${f.nome}"?`)) return;
     setTogglingId(f.id);
+    setImportError('');
     try {
       if (f.ativo) await deactivateForm(f.id);
       else await activateForm(f.id);
+      setStatusFilter(f.ativo ? 'inativo' : 'ativo');
       await loadForms();
-    } catch {
-      // silently fail
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Nao foi possivel alterar o status do formulario.');
     } finally {
       setTogglingId(null);
     }

@@ -14,36 +14,24 @@ public sealed class FormRepository : IFormRepository
         _context = context;
     }
 
-    public Task<List<FormTemplate>> ListAsync(CancellationToken cancellationToken = default) =>
-        _context.FormTemplates
+    public Task<List<FormTemplate>> ListAsync(bool includeInactive = false, CancellationToken cancellationToken = default) =>
+        DetailedQuery()
             .AsNoTracking()
-            .Include(x => x.Group)
-            .Include(x => x.CriadoPorUsuario)
-            .Include(x => x.Questions).ThenInclude(q => q.Options)
-            .Include(x => x.ClassificationRanges)
-            .Where(x => x.Ativo)
+            .Where(x => includeInactive || x.Ativo)
             .OrderBy(x => x.Nome)
             .ToListAsync(cancellationToken);
 
-    public Task<List<FormTemplate>> ListByGroupIdsAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken cancellationToken = default) =>
-        _context.FormTemplates
+    public Task<List<FormTemplate>> ListByGroupIdsAsync(IReadOnlyCollection<Guid> groupIds, bool includeInactive = false, CancellationToken cancellationToken = default) =>
+        DetailedQuery()
             .AsNoTracking()
-            .Include(x => x.Group)
-            .Include(x => x.CriadoPorUsuario)
-            .Include(x => x.Questions).ThenInclude(q => q.Options)
-            .Include(x => x.ClassificationRanges)
-            .Where(x => x.Ativo && (x.GroupId == null || groupIds.Contains(x.GroupId.Value)))
+            .Where(x => (includeInactive || x.Ativo) && (x.GroupId == null || groupIds.Contains(x.GroupId.Value)))
             .OrderBy(x => x.Nome)
             .ToListAsync(cancellationToken);
 
-    public Task<List<FormTemplate>> ListByOrganizationIdAsync(Guid organizationId, CancellationToken cancellationToken = default) =>
-        _context.FormTemplates
+    public Task<List<FormTemplate>> ListByOrganizationIdAsync(Guid organizationId, bool includeInactive = false, CancellationToken cancellationToken = default) =>
+        DetailedQuery()
             .AsNoTracking()
-            .Include(x => x.Group)
-            .Include(x => x.CriadoPorUsuario)
-            .Include(x => x.Questions).ThenInclude(q => q.Options)
-            .Include(x => x.ClassificationRanges)
-            .Where(x => x.Ativo && x.OrganizationId == organizationId)
+            .Where(x => (includeInactive || x.Ativo) && x.OrganizationId == organizationId)
             .OrderBy(x => x.Nome)
             .ToListAsync(cancellationToken);
 
@@ -63,6 +51,13 @@ public sealed class FormRepository : IFormRepository
 
     public Task AddAsync(FormTemplate formTemplate, CancellationToken cancellationToken = default) =>
         _context.FormTemplates.AddAsync(formTemplate, cancellationToken).AsTask();
+
+    private IQueryable<FormTemplate> DetailedQuery() =>
+        _context.FormTemplates
+            .Include(x => x.Group)
+            .Include(x => x.CriadoPorUsuario)
+            .Include(x => x.Questions).ThenInclude(q => q.Options)
+            .Include(x => x.ClassificationRanges);
 }
 
 

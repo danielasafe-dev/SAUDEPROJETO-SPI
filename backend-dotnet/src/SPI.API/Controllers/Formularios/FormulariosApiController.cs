@@ -19,9 +19,9 @@ public sealed class FormsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> List(CancellationToken cancellationToken)
+    public async Task<IActionResult> List([FromQuery] bool includeInactive, CancellationToken cancellationToken)
     {
-        var result = await _formsAppService.ListAsync(User.GetUserId(), cancellationToken);
+        var result = await _formsAppService.ListAsync(User.GetUserId(), includeInactive, cancellationToken);
         return Ok(result);
     }
 
