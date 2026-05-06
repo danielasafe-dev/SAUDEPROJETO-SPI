@@ -79,6 +79,12 @@ public sealed class PatientsAppService : IPatientsAppService
         var group = await _groupRepository.GetByIdAsync(groupId, cancellationToken)
             ?? throw new KeyNotFoundException("Grupo nao encontrado.");
 
+        var normalizedCpf = NormalizeDigits(request.Cpf);
+        if (await _patientRepository.AnyByCpfAsync(normalizedCpf, cancellationToken: cancellationToken))
+        {
+            throw new InvalidOperationException("Ja existe um paciente cadastrado com este CPF.");
+        }
+
         var patient = new SPI.Domain.Entities.Patient(
             request.Nome,
             request.Cpf,
@@ -133,6 +139,12 @@ public sealed class PatientsAppService : IPatientsAppService
         var groupId = ResolveExistingOrRequestedGroupId(request.GroupId, patient.GroupId, actor.Role, accessScope);
         var group = await _groupRepository.GetByIdAsync(groupId, cancellationToken)
             ?? throw new KeyNotFoundException("Grupo nao encontrado.");
+
+        var normalizedCpf = NormalizeDigits(request.Cpf);
+        if (await _patientRepository.AnyByCpfAsync(normalizedCpf, patient.Id, cancellationToken))
+        {
+            throw new InvalidOperationException("Ja existe um paciente cadastrado com este CPF.");
+        }
 
         patient.UpdateDetails(
             request.Nome,
@@ -218,6 +230,9 @@ public sealed class PatientsAppService : IPatientsAppService
 
         return currentGroupId;
     }
+
+    private static string NormalizeDigits(string? value) =>
+        new((value ?? string.Empty).Where(char.IsDigit).ToArray());
 }
 
 

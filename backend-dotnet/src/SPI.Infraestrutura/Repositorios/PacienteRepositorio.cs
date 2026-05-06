@@ -41,6 +41,17 @@ public sealed class PatientRepository : IPatientRepository
             .Include(x => x.Group)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public Task<bool> AnyByCpfAsync(string cpf, Guid? ignorePatientId = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Patients.AsNoTracking().Where(x => x.Cpf == cpf);
+        if (ignorePatientId.HasValue)
+        {
+            query = query.Where(x => x.Id != ignorePatientId.Value);
+        }
+
+        return query.AnyAsync(cancellationToken);
+    }
+
     public Task<List<Patient>> ListByOrganizationIdAsync(Guid organizationId, CancellationToken cancellationToken = default) =>
         _context.Patients
             .AsNoTracking()

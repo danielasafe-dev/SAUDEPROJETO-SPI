@@ -1,4 +1,5 @@
 import { isMockMode, api } from '@/shared/api/client';
+import axios from 'axios';
 import { mockPatients } from '@/shared/api/mockData';
 import type { Evaluation, Patient } from '@/types';
 import { getEvals } from '@/domains/dashboard/api';
@@ -68,8 +69,12 @@ export async function createPatient(data: CreatePatientInput): Promise<Patient> 
     return created;
   }
 
-  const response = await api.post('/api/patients', data);
-  return normalizePatient(response.data);
+  try {
+    const response = await api.post('/api/patients', data);
+    return normalizePatient(response.data);
+  } catch (error) {
+    throw normalizeApiError(error, 'Nao foi possivel salvar o paciente.');
+  }
 }
 
 export async function updatePatient(id: string, data: UpdatePatientInput): Promise<Patient> {
@@ -100,8 +105,12 @@ export async function updatePatient(id: string, data: UpdatePatientInput): Promi
     return normalizePatient(patient);
   }
 
-  const response = await api.put(`/api/patients/${id}`, data);
-  return normalizePatient(response.data);
+  try {
+    const response = await api.put(`/api/patients/${id}`, data);
+    return normalizePatient(response.data);
+  } catch (error) {
+    throw normalizeApiError(error, 'Nao foi possivel salvar o paciente.');
+  }
 }
 
 export async function deletePatient(id: string): Promise<void> {
@@ -232,4 +241,19 @@ function resolveNullableNumber(value: unknown, fallback: number | null = null): 
 
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeApiError(error: unknown, fallback: string): Error {
+  if (axios.isAxiosError<{ detail?: string }>(error)) {
+    const detail = error.response?.data?.detail?.trim();
+    if (detail) {
+      return new Error(detail);
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error;
+  }
+
+  return new Error(fallback);
 }
